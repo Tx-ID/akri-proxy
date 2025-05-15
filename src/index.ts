@@ -1,5 +1,5 @@
-import express, { Request, Response } from 'express';
-import { createProxyMiddleware } from 'http-proxy-middleware';
+import express, { Request, Response } from "express";
+import { createProxyMiddleware } from "http-proxy-middleware";
 
 type ProxyRouteConfig = {
     [route: string]: string;
@@ -19,30 +19,26 @@ Object.entries(PROXY_ROUTES).forEach(([route, target]) => {
         createProxyMiddleware({
             target,
             changeOrigin: true,
-            pathRewrite: (path, req) => path.replace(new RegExp(`^${route}`), ''),
-        })
+            pathRewrite: (path, req) =>
+                path.replace(new RegExp(`^${route}`), ""),
+        }),
     );
 });
 
-app.use(
-    /^\/([^\/]+)\/(.*)/,
-    (req, res, next) => {
-        const match = req.path.match(/^\/([^\/]+)\/(.*)/);
-        if (match) {
-            const subdomain = match[1];
-            const target = `https://${subdomain}.roblox.com`;
-
-            return createProxyMiddleware({
-                target,
-                changeOrigin: true,
-                pathRewrite: (path, req) => {
-                    return path.replace(/^\/[^\/]+/, '');
-                },
-            })(req, res, next);
-        }
-        next();
+app.use((req, res, next) => {
+    console.log(req.path);
+    const match = req.path.match(/^\/([^\/]+)(?:\/(.*))?/);
+    if (match) {
+        const subdomain = match[1];
+        const target = `https://${subdomain}.roblox.com`;
+        return createProxyMiddleware({
+            target,
+            changeOrigin: true,
+            pathRewrite: (path, req) => path.replace(/^\/[^\/]+/, "") || "/",
+        })(req, res, next);
     }
-);
+    next();
+});
 
 app.use((req: Request, res: Response) => {
     res.status(404).json({ error: "Not found" });
@@ -54,5 +50,7 @@ app.listen(PORT, () => {
     Object.entries(PROXY_ROUTES).forEach(([route, target]) => {
         console.log(`  Proxying ${route}/* => ${target}`);
     });
-    console.log(`  Proxying /X/* => https://X.roblox.com/* (dynamic catch-all)`);
+    console.log(
+        `  Proxying /X/* => https://X.roblox.com/* (dynamic catch-all)`,
+    );
 });
