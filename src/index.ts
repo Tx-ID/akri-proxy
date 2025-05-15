@@ -26,7 +26,6 @@ Object.entries(PROXY_ROUTES).forEach(([route, target]) => {
 });
 
 app.use((req, res, next) => {
-    console.log(req.path);
     const match = req.path.match(/^\/([^\/]+)(?:\/(.*))?/);
     if (match) {
         const subdomain = match[1];
