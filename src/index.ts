@@ -28,6 +28,8 @@ import NodeCache from "node-cache";
 const cache = new NodeCache({ stdTTL: 10 });
 const app = express();
 
+
+// custom routing first.
 function getSubdomainFromRequest(req: express.Request): string | undefined {
     const match = req.path.match(/^\/([^\/]+)(?:\/|$)/);
     return match ? match[1] : undefined;
@@ -69,7 +71,6 @@ Object.entries(PROXY_ROUTES).forEach(([route, target]) => {
 });
 
 const dynamicProxyCache = new Map<string, ReturnType<typeof createProxyMiddleware>>();
-
 app.use((req, res, next) => {
     const match = req.path.match(/^\/([^\/]+)(?:\/(.*))?/);
     if (match) {
@@ -82,6 +83,11 @@ app.use((req, res, next) => {
                 target: `https://${subdomain}.roblox.com`,
                 changeOrigin: true,
                 pathRewrite: (path, req) => path.replace(/^\/[^\/]+/, "") || "/",
+                on: {
+                    error: (err, req, res, target) => {
+                        return res.redirect('https://www.youtube.com/watch?v=C9i5SUDWls0');
+                    }
+                },
             });
             dynamicProxyCache.set(subdomain, proxy as any);
         }
@@ -91,9 +97,11 @@ app.use((req, res, next) => {
 });
 
 app.use((req: Request, res: Response) => {
-    res.status(404).json({ error: "Not found" });
+    return res.redirect('https://www.youtube.com/watch?v=C9i5SUDWls0');
 });
 
+
+// the real thing.
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`listening on http://localhost:${PORT}`);
