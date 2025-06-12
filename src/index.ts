@@ -78,8 +78,10 @@ app.use((req, res, next) => {
         if (!subdomain)
             return next();
 
-        delete req.headers['Roblox-Id'];
-        req.headers['User-Agent'] = 'AKRI';
+        delete req.headers['roblox-id'];
+        req.headers['user-agent'] = 'AKRI';
+
+        // console.log(req.headers);
 
         if (!dynamicProxyCache.has(subdomain)) {
             const proxy = createProxyMiddleware({
