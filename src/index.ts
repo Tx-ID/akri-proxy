@@ -58,17 +58,17 @@ app.use((req, res: any, next) => {
     next();
 });
 
-Object.entries(PROXY_ROUTES).forEach(([route, target]) => {
-    app.use(
-        route,
-        createProxyMiddleware({
-            target,
-            changeOrigin: true,
-            pathRewrite: (path, req) =>
-                path.replace(new RegExp(`^${route}`), ""),
-        }),
-    );
-});
+// Object.entries(PROXY_ROUTES).forEach(([route, target]) => {
+//     app.use(
+//         route,
+//         createProxyMiddleware({
+//             target,
+//             changeOrigin: true,
+//             pathRewrite: (path, req) =>
+//                 path.replace(new RegExp(`^${route}`), ""),
+//         }),
+//     );
+// });
 
 const dynamicProxyCache = new Map<string, ReturnType<typeof createProxyMiddleware>>();
 app.use((req, res, next) => {
@@ -77,6 +77,9 @@ app.use((req, res, next) => {
         const subdomain = match[1];
         if (!subdomain)
             return next();
+
+        delete req.headers['Roblox-Id'];
+        req.headers['User-Agent'] = 'AKRI';
 
         if (!dynamicProxyCache.has(subdomain)) {
             const proxy = createProxyMiddleware({
