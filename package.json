@@ -10,11 +10,14 @@
     "typescript": "^5.8.3"
   },
   "dependencies": {
+    "@types/cookie-parser": "^1.4.9",
     "@types/express": "^5.0.1",
     "@types/node": "^22.15.18",
+    "cookie-parser": "^1.4.7",
     "express": "^5.1.0",
     "http-proxy-middleware": "^3.0.5",
     "node-cache": "^5.1.2",
-    "nodemon": "^3.1.10"
+    "nodemon": "^3.1.10",
+    "puppeteer": "^24.11.2"
   }
 }

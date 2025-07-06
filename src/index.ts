@@ -19,14 +19,17 @@ const PROXY_ROUTES: ProxyRouteConfig = {
 
 
 //
+import { getRobloxCookie } from "./akribot";
 import express, { Request, Response } from "express";
+import cookieParser from 'cookie-parser';
 import { createProxyMiddleware } from "http-proxy-middleware";
 import NodeCache from "node-cache";
 
 
 //
-const cache = new NodeCache({ stdTTL: 10 });
+const cache = new NodeCache({ stdTTL: 5 });
 const app = express();
+app.use(cookieParser());
 
 
 // custom routing first.
@@ -35,12 +38,16 @@ function getSubdomainFromRequest(req: express.Request): string | undefined {
     return match ? match[1] : undefined;
 }
 
-app.use((req, res: any, next) => {
+app.use(async (req, res: Response & any, next) => {
     const cacheKey = req.method + req.originalUrl;
     const cached: {status: any, headers: any, body: any} | undefined = cache.get(cacheKey);
     if (cached) {
         return res.status(cached.status).set(cached.headers).send(cached.body);
     }
+    
+    const code = await getRobloxCookie();
+    req.headers['cookie'] = `.ROBLOSECURITY=${code}`;
+
     const originalSend = res.send.bind(res);
     res.send = (body: any) => {
         if (res.statusCode === 200) {
@@ -58,30 +65,16 @@ app.use((req, res: any, next) => {
     next();
 });
 
-// Object.entries(PROXY_ROUTES).forEach(([route, target]) => {
-//     app.use(
-//         route,
-//         createProxyMiddleware({
-//             target,
-//             changeOrigin: true,
-//             pathRewrite: (path, req) =>
-//                 path.replace(new RegExp(`^${route}`), ""),
-//         }),
-//     );
-// });
-
 const dynamicProxyCache = new Map<string, ReturnType<typeof createProxyMiddleware>>();
-app.use((req, res, next) => {
+app.use(async (req, res, next) => {
     const match = req.path.match(/^\/([^\/]+)(?:\/(.*))?/);
     if (match) {
         const subdomain = match[1];
-        if (!subdomain)
+        if (!subdomain || subdomain == '.well-known' || subdomain == "favicon.ico")
             return next();
 
         delete req.headers['roblox-id'];
         req.headers['user-agent'] = 'AKRI';
-
-        // console.log(req.headers);
 
         if (!dynamicProxyCache.has(subdomain)) {
             const proxy = createProxyMiddleware({
@@ -96,6 +89,7 @@ app.use((req, res, next) => {
             });
             dynamicProxyCache.set(subdomain, proxy as any);
         }
+
         return dynamicProxyCache.get(subdomain)!(req, res, next);
     }
     next();
