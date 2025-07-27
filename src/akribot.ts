@@ -31,7 +31,7 @@ let lastFetch = 0;
 export async function getRobloxCookie() {
     const last_cookie = await readTextFile(cookieFile);
 
-    if (Date.now() - lastFetch >= 1000 * 600) {
+    if (Date.now() - lastFetch >= 1000 * 60 * 10) {
       return last_cookie;
     }
 
