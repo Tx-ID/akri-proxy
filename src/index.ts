@@ -111,6 +111,8 @@ app.use(async (req, res, next) => {
         const query = queryIdx !== -1 ? req.url.slice(queryIdx) : "";
         const targetPath = `/${restOfPath}${query}`;
 
+        console.log(targetPath);
+
         delete req.headers['roblox-id'];
         req.headers['user-agent'] = 'AKRI';
 
