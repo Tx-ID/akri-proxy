@@ -121,11 +121,7 @@ app.use(async (req, res, next) => {
 
         const targetHost = `${subdomain}.roblox.com`;
 
-        // console.log({ incomingPath: req.path, subdomain, restOfPath, targetPath, targetHost });
-
         const proxyHeaders: http.OutgoingHttpHeaders = { ...req.headers };
-        // console.log(proxyHeaders);
-
         const hopByHopHeaders = [
             'connection', 'keep-alive', 'proxy-authenticate', 'proxy-authorization',
             'te', 'trailer', 'transfer-encoding', 'upgrade'
@@ -139,8 +135,6 @@ app.use(async (req, res, next) => {
         if (proxyHeaders['host']) {
             delete proxyHeaders['host'];
         }
-
-        // console.log(proxyHeaders);
 
         const options: https.RequestOptions = {
             method: req.method,
