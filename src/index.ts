@@ -92,12 +92,10 @@ app.use(async (req, res, next) => {
         
 
         delete req.headers['roblox-id'];
-        req.headers['user-agent'] = 'AKRI';
+        // req.headers['user-agent'] = 'AKRI';
+        req.headers['user-agent'] = "Mozilla/5.0 (compatible; Chrome/100)";
 
         const targetHost = `${subdomain}.roblox.com`;
-        // if (debugMode) {
-        //     console.log(`${targetHost}${targetPath}`);
-        // }
 
         const proxyHeaders: http.OutgoingHttpHeaders = { ...req.headers };
         const hopByHopHeaders = [
@@ -123,7 +121,7 @@ app.use(async (req, res, next) => {
 
         const options: https.RequestOptions = {
             method: req.method,
-            host: targetHost,
+            hostname: targetHost,
             path: targetPath,
             headers: proxyHeaders,
 
@@ -141,6 +139,13 @@ app.use(async (req, res, next) => {
                 }
             }
             res.writeHead(proxyRes.statusCode || 500);
+
+            proxyRes.on('end', () => {
+                if (!res.headersSent) {
+                    res.status(502).send('Proxy: No data from upstream');
+                }
+            });
+
             proxyRes.pipe(res);
         });
 
