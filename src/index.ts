@@ -123,7 +123,9 @@ app.use(async (req, res, next) => {
         req.headers['user-agent'] = 'AKRI';
 
         const targetHost = `${subdomain}.roblox.com`;
-        console.log(`${targetHost}${targetPath}`);
+        if (debugMode) {
+            console.log(`${targetHost}${targetPath}`);
+        }
 
         const proxyHeaders: http.OutgoingHttpHeaders = { ...req.headers };
         const hopByHopHeaders = [
