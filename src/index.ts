@@ -101,25 +101,29 @@ app.use(async (req, res, next) => {
 
     const match = req.path.match(/^\/([^\/]+)(?:\/(.*))?/);
     if (match) {
-        const subdomain = match[1];
+        let subdomain = match[1];
         const restOfPath = match[2] || "";
 
         if (!subdomain || subdomain === '.well-known' || subdomain === "favicon.ico") {
             return next();
         }
-        const targetPath = `/${restOfPath}`;
+        const debugMode = subdomain.startsWith("debug-");
+        let targetPath = `/${restOfPath}`;
 
-        // const queryIdx = req.url.indexOf('?');
-        // const query = queryIdx !== -1 ? req.url.slice(queryIdx) : "";
-        // // const targetPath = `/${restOfPath}${query}`;   
+        if (debugMode) {
+            const queryIdx = req.url.indexOf('?');
+            const query = queryIdx !== -1 ? req.url.slice(queryIdx) : "";
+            const sanitizedRestOfPath = restOfPath ? `/${restOfPath}` : '/';
+            targetPath = `${sanitizedRestOfPath}${query}`;
+            subdomain = subdomain.substring("debug-".length);
+        }
         
-        // const sanitizedRestOfPath = restOfPath ? `/${restOfPath}` : '/';
-        // const targetPath = `${sanitizedRestOfPath}${query}`;
 
         delete req.headers['roblox-id'];
         req.headers['user-agent'] = 'AKRI';
 
         const targetHost = `${subdomain}.roblox.com`;
+        console.log(`${targetHost}${targetPath}`);
 
         const proxyHeaders: http.OutgoingHttpHeaders = { ...req.headers };
         const hopByHopHeaders = [
