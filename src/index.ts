@@ -107,14 +107,14 @@ app.use(async (req, res, next) => {
         if (!subdomain || subdomain === '.well-known' || subdomain === "favicon.ico") {
             return next();
         }
-        const targetPath = `/${restOfPath}`;
+        // const targetPath = `/${restOfPath}`;
 
-        // const queryIdx = req.url.indexOf('?');
-        // const query = queryIdx !== -1 ? req.url.slice(queryIdx) : "";
-        // // const targetPath = `/${restOfPath}${query}`;   
+        const queryIdx = req.url.indexOf('?');
+        const query = queryIdx !== -1 ? req.url.slice(queryIdx) : "";
+        // const targetPath = `/${restOfPath}${query}`;   
         
-        // const sanitizedRestOfPath = restOfPath ? `/${restOfPath}` : '/';
-        // const targetPath = `${sanitizedRestOfPath}${query}`;
+        const sanitizedRestOfPath = restOfPath ? `/${restOfPath}` : '/';
+        const targetPath = `${sanitizedRestOfPath}${query}`;
 
         delete req.headers['roblox-id'];
         req.headers['user-agent'] = 'AKRI';
