@@ -107,11 +107,11 @@ app.use(async (req, res, next) => {
         if (!subdomain || subdomain === '.well-known' || subdomain === "favicon.ico") {
             return next();
         }
-        const queryIdx = req.url.indexOf('?');
-        const query = queryIdx !== -1 ? req.url.slice(queryIdx) : "";
-        const targetPath = `/${restOfPath}${query}`;
+        const targetPath = `/${restOfPath}`;
 
-        console.log(targetPath);
+        // const queryIdx = req.url.indexOf('?');
+        // const query = queryIdx !== -1 ? req.url.slice(queryIdx) : "";
+        // const targetPath = `/${restOfPath}${query}`;    
 
         delete req.headers['roblox-id'];
         req.headers['user-agent'] = 'AKRI';
