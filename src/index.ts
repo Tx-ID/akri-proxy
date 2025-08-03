@@ -95,9 +95,9 @@ app.use(async (req, res, next) => {
         req.headers['user-agent'] = 'AKRI';
 
         const targetHost = `${subdomain}.roblox.com`;
-        if (debugMode) {
-            console.log(`${targetHost}${targetPath}`);
-        }
+        // if (debugMode) {
+        //     console.log(`${targetHost}${targetPath}`);
+        // }
 
         const proxyHeaders: http.OutgoingHttpHeaders = { ...req.headers };
         const hopByHopHeaders = [
@@ -111,6 +111,15 @@ app.use(async (req, res, next) => {
             }
         });
         proxyHeaders['host'] = targetHost;
+        if (debugMode) {
+            console.log({
+                subdomain, 
+                targetHost, 
+                targetPath, 
+                hostHeader: proxyHeaders['host'],
+                debugMode
+            });
+        }
 
         const options: https.RequestOptions = {
             method: req.method,
