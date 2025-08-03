@@ -32,41 +32,43 @@ import * as http from 'http';
 
 
 //
-const cache = new NodeCache({ stdTTL: 5 });
+// const ENABLE_CACHE = process.env.ENABLE_CACHE !== "false";
+// const cache = ENABLE_CACHE ? new NodeCache({ stdTTL: 5 }) : null;
+
 const app = express();
 app.use(cookieParser());
 
 
 // custom routing first.
-function getSubdomainFromRequest(req: express.Request): string | undefined {
-    const match = req.path.match(/^\/([^\/]+)(?:\/|$)/);
-    return match ? match[1] : undefined;
-}
+// function getSubdomainFromRequest(req: express.Request): string | undefined {
+//     const match = req.path.match(/^\/([^\/]+)(?:\/|$)/);
+//     return match ? match[1] : undefined;
+// }
 
 app.use(async (req, res: Response & any, next) => {
-    const cacheKey = req.method + req.originalUrl;
-    const cached: {status: any, headers: any, body: any} | undefined = cache.get(cacheKey);
-    if (cached) {
-        return res.status(cached.status).set(cached.headers).send(cached.body);
-    }
+    // const cacheKey = req.method + req.originalUrl;
+    // const cached = ENABLE_CACHE && cache ? cache.get(cacheKey) : undefined;
+    // if (cached) {
+    //     return res.status(cached.status).set(cached.headers).send(cached.body);
+    // }
     
     const code = await getRobloxCookie();
     req.headers['cookie'] = `.ROBLOSECURITY=${code}`;
 
-    const originalSend = res.send.bind(res);
-    res.send = (body: any) => {
-        if (res.statusCode === 200) {
-            const subdomain = getSubdomainFromRequest(req);
-            const ttl = subdomain && SUBDOMAIN_CACHE_TTLS[subdomain] ? SUBDOMAIN_CACHE_TTLS[subdomain] : (cache.options.stdTTL ?? 5);
+    // const originalSend = res.send.bind(res);
+    // res.send = (body: any) => {
+    //     if (res.statusCode === 200) {
+    //         const subdomain = getSubdomainFromRequest(req);
+    //         const ttl = subdomain && SUBDOMAIN_CACHE_TTLS[subdomain] ? SUBDOMAIN_CACHE_TTLS[subdomain] : (cache.options.stdTTL ?? 5);
 
-            cache.set(cacheKey, {
-                status: res.statusCode,
-                headers: res.getHeaders(),
-                body,
-            }, ttl);
-        }
-        return originalSend(body);
-    };
+    //         cache.set(cacheKey, {
+    //             status: res.statusCode,
+    //             headers: res.getHeaders(),
+    //             body,
+    //         }, ttl);
+    //     }
+    //     return originalSend(body);
+    // };
     next();
 });
 
