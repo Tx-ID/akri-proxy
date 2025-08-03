@@ -70,35 +70,7 @@ app.use(async (req, res: Response & any, next) => {
     next();
 });
 
-// const dynamicProxyCache = new Map<string, ReturnType<typeof createProxyMiddleware>>();
 app.use(async (req, res, next) => {
-    // const match = req.path.match(/^\/([^\/]+)(?:\/(.*))?/);
-    // if (match) {
-    //     const subdomain = match[1];
-    //     if (!subdomain || subdomain == '.well-known' || subdomain == "favicon.ico")
-    //         return next();
-
-    //     delete req.headers['roblox-id'];
-    //     req.headers['user-agent'] = 'AKRI';
-
-    //     if (!dynamicProxyCache.has(subdomain)) {
-    //         const proxy = createProxyMiddleware({
-    //             target: `https://${subdomain}.roblox.com`,
-    //             changeOrigin: true,
-    //             pathRewrite: (path, req) => path.replace(/^\/[^\/]+/, "") || "/",
-    //             on: {
-    //                 error: (err, req, res, target) => {
-    //                     return res.redirect('https://www.youtube.com/watch?v=C9i5SUDWls0');
-    //                 }
-    //             },
-    //         });
-    //         dynamicProxyCache.set(subdomain, proxy as any);
-    //     }
-
-    //     return dynamicProxyCache.get(subdomain)!(req, res, next);
-    // }
-    // next();
-
     const match = req.path.match(/^\/([^\/]+)(?:\/(.*))?/);
     if (match) {
         let subdomain = match[1];
@@ -138,9 +110,7 @@ app.use(async (req, res, next) => {
                 delete proxyHeaders[lcHeader];
             }
         });
-        if (proxyHeaders['host']) {
-            delete proxyHeaders['host'];
-        }
+        proxyHeaders['host'] = targetHost;
 
         const options: https.RequestOptions = {
             method: req.method,
@@ -163,6 +133,14 @@ app.use(async (req, res, next) => {
             }
             res.writeHead(proxyRes.statusCode || 500);
             proxyRes.pipe(res);
+        });
+
+        proxyReq.setTimeout(10 * 1000, () => {
+            console.error('Proxy request timed out');
+            proxyReq.abort(); // cancel the request
+            if (!res.headersSent) {
+                res.status(504).send("Gateway Timeout (proxy)");
+            }
         });
 
         proxyReq.on('error', (err) => {
