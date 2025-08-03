@@ -145,6 +145,13 @@ app.use(async (req, res, next) => {
                     res.status(502).send('Proxy: No data from upstream');
                 }
             });
+            proxyRes.on('aborted', () => {
+                console.error('Upstream aborted');
+                if (!res.headersSent) res.status(502).end('Aborted by upstream');
+            });
+            proxyRes.on('close', () => {
+                if (!res.headersSent) res.status(502).end('Closed by upstream');
+            });
 
             proxyRes.pipe(res);
         });
