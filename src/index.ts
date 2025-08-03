@@ -121,7 +121,7 @@ app.use(async (req, res, next) => {
 
         const targetHost = `${subdomain}.roblox.com`;
 
-        // console.log({ incomingPath: req.path, subdomain, restOfPath, targetPath, targetHost });
+        console.log({ incomingPath: req.path, subdomain, restOfPath, targetPath, targetHost });
 
         const proxyHeaders: http.OutgoingHttpHeaders = { ...req.headers };
         const hopByHopHeaders = [
