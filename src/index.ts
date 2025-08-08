@@ -141,31 +141,8 @@ app.use(async (req, res, next) => {
                 }
             }
             res.writeHead(proxyRes.statusCode || 500);
-
-            proxyRes.on('end', () => {
-                if (!res.headersSent) {
-                    res.status(502).send('Proxy: No data from upstream');
-                }
-            });
-            proxyRes.on('aborted', () => {
-                console.error('Upstream aborted');
-                if (!res.headersSent) res.status(502).end('Aborted by upstream');
-            });
-            proxyRes.on('close', () => {
-                if (!res.headersSent) res.status(502).end('Closed by upstream');
-            });
-
             proxyRes.pipe(res);
         });
-
-        proxyReq.setTimeout(10 * 1000, () => {
-            console.error('Proxy request timed out');
-            proxyReq.abort(); // cancel the request
-            if (!res.headersSent) {
-                res.status(504).send("Gateway Timeout (proxy)");
-            }
-        });
-
         proxyReq.on('error', (err) => {
             console.error(`Proxy request error for ${subdomain}.roblox.com${targetPath}:`, err);
             if (!res.headersSent) {
