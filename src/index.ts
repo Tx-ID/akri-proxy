@@ -17,8 +17,8 @@ var httpsProxy = proxy.createProxyServer({
 });
 
 httpsProxy.on("proxyReq", (proxyReq, req, res, options) => {
-    console.log(options);
-    console.log(req.headers);
+    // console.log(options);
+    // console.log(req.headers);
 
     proxyReq.setHeader('User-Agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.169 Safari/537.36');
     proxyReq.removeHeader('roblox-id');
@@ -42,15 +42,8 @@ app.use(async (req, res, next) => {
     if (subdomain === '.well-known' || subdomain === "favicon.ico")
         return next();
 
-    let debugMode = false;
-    if (subdomain.startsWith("debug-")) {
-        debugMode = true;
-        subdomain = subdomain.slice("debug-".length);
-    }
-
     if (
-        debugMode
-        && req.originalUrl.indexOf('?') !== -1
+        req.originalUrl.indexOf('?') !== -1
         && restOfPath.indexOf('?') === -1
     ) {
         restOfPath += req.originalUrl.slice(req.originalUrl.indexOf('?'));
