@@ -1,0 +1,174 @@
+
+type ProxyRouteConfig = {
+    [route: string]: string;
+};
+
+const SUBDOMAIN_CACHE_TTLS: { [subdomain: string]: number } = {
+    // apis: 10,
+    // users: 60,
+    // assetdelivery: 2,
+    // etc...
+
+    friends: 30,
+};
+const PROXY_ROUTES: ProxyRouteConfig = {
+    // "/apis": "https://apis.roblox.com",
+    // "/assetdelivery": "https://assetdelivery.roblox.com",
+    // "/users": "https://users.roblox.com",
+};
+
+
+//
+require('events').EventEmitter.prototype._maxListeners = 100;
+
+import type { Request, Response } from "express";
+
+import { getRobloxCookie } from "./akribot";
+import express from "express";
+import cookieParser from 'cookie-parser';
+import NodeCache from "node-cache";
+import * as https from 'https';
+import * as http from 'http';
+
+
+//
+// const ENABLE_CACHE = process.env.ENABLE_CACHE !== "false";
+// const cache = ENABLE_CACHE ? new NodeCache({ stdTTL: 5 }) : null;
+
+const app = express();
+app.use(cookieParser());
+
+
+// custom routing first.
+// function getSubdomainFromRequest(req: express.Request): string | undefined {
+//     const match = req.path.match(/^\/([^\/]+)(?:\/|$)/);
+//     return match ? match[1] : undefined;
+// }
+
+app.use(async (req, res: Response & any, next) => {
+    // const cacheKey = req.method + req.originalUrl;
+    // const cached = ENABLE_CACHE && cache ? cache.get(cacheKey) : undefined;
+    // if (cached) {
+    //     return res.status(cached.status).set(cached.headers).send(cached.body);
+    // }
+    
+    const code = await getRobloxCookie();
+    req.headers['cookie'] = `.ROBLOSECURITY=${code}`;
+
+    // const originalSend = res.send.bind(res);
+    // res.send = (body: any) => {
+    //     if (res.statusCode === 200) {
+    //         const subdomain = getSubdomainFromRequest(req);
+    //         const ttl = subdomain && SUBDOMAIN_CACHE_TTLS[subdomain] ? SUBDOMAIN_CACHE_TTLS[subdomain] : (cache.options.stdTTL ?? 5);
+
+    //         cache.set(cacheKey, {
+    //             status: res.statusCode,
+    //             headers: res.getHeaders(),
+    //             body,
+    //         }, ttl);
+    //     }
+    //     return originalSend(body);
+    // };
+    next();
+});
+
+app.use(async (req, res, next) => {
+    const match = req.path.match(/^\/([^\/]+)(?:\/(.*))?/);
+    if (match) {
+        let subdomain = match[1];
+        const restOfPath = match[2] || "";
+
+        if (!subdomain || subdomain === '.well-known' || subdomain === "favicon.ico") {
+            return next();
+        }
+        const debugMode = subdomain.startsWith("debug-");
+        let targetPath = `/${restOfPath}`;
+
+        if (debugMode) {
+            const queryIdx = req.url.indexOf('?');
+            const query = queryIdx !== -1 ? req.url.slice(queryIdx) : "";
+            const sanitizedRestOfPath = restOfPath ? `/${restOfPath}` : '/';
+            targetPath = `${sanitizedRestOfPath}${query}`;
+            subdomain = subdomain.substring("debug-".length);
+        }
+        
+
+        delete req.headers['roblox-id'];
+        // req.headers['user-agent'] = 'AKRI';
+        req.headers['user-agent'] = "Mozilla/5.0 (compatible; Chrome/100)";
+
+        const targetHost = `${subdomain}.roblox.com`;
+
+        const proxyHeaders: http.OutgoingHttpHeaders = { ...req.headers };
+        const hopByHopHeaders = [
+            'connection', 'keep-alive', 'proxy-authenticate', 'proxy-authorization',
+            'te', 'trailer', 'transfer-encoding', 'upgrade'
+        ];
+        hopByHopHeaders.forEach(header => {
+            const lcHeader = header.toLowerCase();
+            if (proxyHeaders[lcHeader]) {
+                delete proxyHeaders[lcHeader];
+            }
+        });
+        proxyHeaders['host'] = targetHost;
+        if (debugMode) {
+            console.log({
+                subdomain, 
+                targetHost, 
+                targetPath, 
+                hostHeader: proxyHeaders['host'],
+                debugMode
+            });
+        }
+
+        const options: https.RequestOptions = {
+            method: req.method,
+            hostname: targetHost,
+            path: targetPath,
+            headers: proxyHeaders,
+
+            // Optionally, if you need to disable SSL verification:
+            // rejectUnauthorized: false,
+        };
+
+        const proxyReq = https.request(options, (proxyRes) => {
+            for (const header in proxyRes.headers) {
+                if (proxyRes.headers.hasOwnProperty(header)) {
+                    const headerValue = proxyRes.headers[header];
+                    if (headerValue !== undefined) {
+                        res.setHeader(header, headerValue);
+                    }
+                }
+            }
+            res.writeHead(proxyRes.statusCode || 500);
+            proxyRes.pipe(res);
+        });
+        proxyReq.on('error', (err) => {
+            console.error(`Proxy request error for ${subdomain}.roblox.com${targetPath}:`, err);
+            if (!res.headersSent) {
+                return res.redirect('https://www.youtube.com/watch?v=C9i5SUDWls0');
+            }
+        });
+
+        req.pipe(proxyReq);
+    } else {
+        next();
+    }
+});
+
+app.use((req: Request, res: Response) => {
+    return res.redirect('https://www.youtube.com/watch?v=C9i5SUDWls0');
+});
+
+
+// the real thing.
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+    console.log(`listening on http://localhost:${PORT}`);
+    Object.entries(PROXY_ROUTES).forEach(([route, target]) => {
+        console.log(`  Proxying ${route}/* => ${target}`);
+    });
+    console.log(
+        `  Proxying /X/* => https://X.roblox.com/* (dynamic catch-all)`,
+    );
+});

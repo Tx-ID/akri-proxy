@@ -1,17 +1,12 @@
 
-import { sleep } from 'bun';
 import * as fs from 'fs/promises';
 import { fileURLToPath } from 'url';
 import path from 'path';
 import puppeteer from 'puppeteer';
 
 async function readTextFile(path: string) {
-  try {
     const cookie = await fs.readFile(path, 'utf8');
     return cookie.trim();
-  } catch (err: any) {
-    throw new Error(err);
-  }
 }
 
 async function writeTextFile(path: string, cookieValue: string) {
